@@ -25,6 +25,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
     /* private Context context;
      private List<Note> noteList;*/
     private List<Note> noteList = new ArrayList<>();
+    private OnItemClickListener listener;
 
 
  /*  public NoteAdapter(Context context, List<Note> noteList) {
@@ -85,6 +86,23 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
         public ViewHolder(@NonNull NoteItemBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
+
+           binding.getRoot().setOnClickListener(new View.OnClickListener() {
+               @Override
+               public void onClick(View view) {
+                   int position = getAdapterPosition();
+                   if (listener != null && position != RecyclerView.NO_POSITION){
+                       listener.onItemClicked(noteList.get(position));
+                   }
+               }
+           });
         }
+    }
+
+    public interface OnItemClickListener{
+        void onItemClicked(Note note);
+    }
+    public void setOnItemClickedListener(OnItemClickListener listener){
+        this.listener = listener;
     }
 }

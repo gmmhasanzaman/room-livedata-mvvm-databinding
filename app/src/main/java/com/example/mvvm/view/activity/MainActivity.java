@@ -24,13 +24,14 @@ import com.example.mvvm.model.Note;
 import com.example.mvvm.view.adapter.NoteAdapter;
 import com.example.mvvm.viewmodel.NoteViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final int ADD_NOTE_REQUEST_CODE = 1;
+    public static final int EDIT_NOTE_REQUEST_CODE = 2;
+
     private NoteViewModel noteViewModel;
-    public static final int NOTE_REQUEST_CODE = 1;
     private NoteAdapter adapter;
 
     private ActivityMainBinding binding;
@@ -57,10 +58,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        deleteRow();
+        deleteNote();
+        editNote();
     }
 
-    private void deleteRow() {
+    private void editNote() {
+
+        adapter.setOnItemClickedListener(new NoteAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClicked(Note note) {
+
+                Intent intent = new Intent(MainActivity.this, AddNoteActivity.class);
+                intent.putExtra(AddNoteActivity.EXTRA_ID, note.getId());
+                intent.putExtra(AddNoteActivity.EXTRA_TITLE, note.getTitle());
+                intent.putExtra(AddNoteActivity.EXTRA_DESCRIPTION, note.getDescription());
+                intent.putExtra(AddNoteActivity.EXTRA_PRIORITY, note.getPriority());
+                startActivityForResult(intent, EDIT_NOTE_REQUEST_CODE);
+            }
+        });
+    }
+
+    private void deleteNote() {
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -92,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, AddNoteActivity.class);
-                startActivityForResult(intent, NOTE_REQUEST_CODE);
+                startActivityForResult(intent, ADD_NOTE_REQUEST_CODE);
 
             }
         });
@@ -100,10 +118,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == NOTE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+        if (requestCode == ADD_NOTE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
 
             String title = data.getStringExtra(AddNoteActivity.EXTRA_TITLE);
             String description = data.getStringExtra(AddNoteActivity.EXTRA_DESCRIPTION);
@@ -113,6 +130,21 @@ public class MainActivity extends AppCompatActivity {
             noteViewModel.insert(note);
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
 
+        } else if (requestCode == EDIT_NOTE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            int id = data.getIntExtra(AddNoteActivity.EXTRA_ID,-1);
+
+            if (id == -1){
+                Toast.makeText(this, "Note can't be updated!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String title = data.getStringExtra(AddNoteActivity.EXTRA_TITLE);
+            String description = data.getStringExtra(AddNoteActivity.EXTRA_DESCRIPTION);
+            int priority = data.getIntExtra(AddNoteActivity.EXTRA_PRIORITY,1);
+
+            Note note = new Note(title,description,priority);
+            note.setId(id);
+            noteViewModel.update(note);
+            Toast.makeText(this, "Note Updated!", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Not Saved!", Toast.LENGTH_SHORT).show();
         }
@@ -122,14 +154,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.main_menu,menu);
+        menuInflater.inflate(R.menu.main_menu, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
-        if (item.getItemId() == R.id.deleteAllID){
+        if (item.getItemId() == R.id.deleteAllID) {
             noteViewModel.deleteAllNotes();
             Toast.makeText(this, "All notes Deleted!", Toast.LENGTH_SHORT).show();
             return true;
